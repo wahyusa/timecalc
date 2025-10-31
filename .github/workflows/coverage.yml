@@ -1,0 +1,55 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
+      - name: Generate coverage report
+        run: |
+          cargo llvm-cov --all-features --workspace > coverage-report.txt
+          cat coverage-report.txt
+
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          # Extract the line coverage percentage from the report
+          COVERAGE=$(cargo llvm-cov --all-features --workspace 2>&1 | grep "TOTAL" | awk '{print $NF}' | tr -d '%')
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Coverage: $COVERAGE%"
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=${{ steps.coverage.outputs.percentage }}
+          THRESHOLD=80
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "Coverage $COVERAGE% is below threshold $THRESHOLD%"
+            exit 1
+          fi
+          echo "Coverage $COVERAGE% meets threshold $THRESHOLD%"
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            lcov.info
+            coverage-report.txt

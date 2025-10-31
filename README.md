@@ -1,5 +1,9 @@
 # TimeCalc
 
+[![CI](https://github.com/wahyusa/timecalc/actions/workflows/ci.yml/badge.svg)](https://github.com/wahyusa/timecalc/actions/workflows/ci.yml)
+[![Coverage](https://github.com/wahyusa/timecalc/actions/workflows/coverage.yml/badge.svg)](https://github.com/wahyusa/timecalc/actions/workflows/coverage.yml)
+[![Release](https://github.com/wahyusa/timecalc/actions/workflows/release.yml/badge.svg)](https://github.com/wahyusa/timecalc/actions/workflows/release.yml)
+
 A fast, offline CLI tool for time calculations written in Rust.
 Shit maybe I need to use other name...
 
@@ -79,7 +83,17 @@ cargo test -- --nocapture
 
 # Run clippy for linting
 cargo clippy -- -D warnings
+
+# Generate test coverage (requires cargo-llvm-cov)
+cargo install cargo-llvm-cov
+cargo llvm-cov --all-features --workspace
+
+# Generate HTML coverage report
+cargo llvm-cov --all-features --workspace --html --output-dir target/llvm-cov/html
+# Open target/llvm-cov/html/html/index.html in a browser
 ```
+
+**Current test coverage: 96.83%** (660/681 lines covered)
 
 ### Building
 

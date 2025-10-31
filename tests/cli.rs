@@ -252,3 +252,149 @@ fn test_tz_convert_error_invalid_tz() {
         .stdout(predicate::str::contains("ERROR: Unsupported timezone"));
 }
 
+// ===================================
+// Additional tests for command aliases
+// ===================================
+
+#[test]
+fn test_date_alias() {
+    // "date" is an alias for "future"
+    cmd()
+        .arg("date")
+        .arg("5")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("AFTER 5 DAYS"));
+}
+
+#[test]
+fn test_convert_alias() {
+    // "convert" is an alias for "tz"
+    cmd()
+        .arg("convert")
+        .arg("10:00")
+        .arg("UTC")
+        .arg("to")
+        .arg("PST")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
+}
+
+#[test]
+fn test_help_flag() {
+    // Test -h flag
+    cmd()
+        .arg("-h")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIME CALCULATOR CLI"));
+}
+
+#[test]
+fn test_help_command() {
+    // Test help command
+    cmd()
+        .arg("help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("FUTURE/PAST DATES"));
+}
+
+#[test]
+fn test_left_alias() {
+    // "left" is an alias for "remaining"
+    cmd()
+        .arg("left")
+        .arg("month")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("DAYS REMAINING"));
+}
+
+// ===================================
+// Additional integration tests
+// ===================================
+
+#[test]
+fn test_tz_convert_with_date() {
+    // Test timezone conversion with full date
+    cmd()
+        .arg("tz")
+        .arg("October")
+        .arg("9,")
+        .arg("2025")
+        .arg("at")
+        .arg("04:00AM")
+        .arg("UTC+8")
+        .arg("to")
+        .arg("WIB")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
+}
+
+#[test]
+fn test_tz_convert_insufficient_args() {
+    // Test with less than 4 arguments
+    cmd()
+        .arg("tz")
+        .arg("04:00AM")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ERROR: Invalid format"));
+}
+
+#[test]
+fn test_day_command_no_args() {
+    // Test day command without arguments
+    cmd()
+        .arg("day")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ERROR: Please provide a date"));
+}
+
+#[test]
+fn test_remaining_no_args() {
+    // Test remaining command without arguments
+    cmd()
+        .arg("remaining")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("ERROR: Specify 'month' or 'year'"));
+}
+
+#[test]
+fn test_future_with_days_suffix() {
+    // Test future command with "days" suffix
+    cmd()
+        .arg("future")
+        .arg("7days")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("AFTER 7 DAYS"));
+}
+
+#[test]
+fn test_future_with_d_suffix() {
+    // Test future command with "d" suffix
+    cmd()
+        .arg("future")
+        .arg("14d")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("AFTER 14 DAYS"));
+}
+
+#[test]
+fn test_past_with_days_suffix() {
+    // Test past command with "days" suffix
+    cmd()
+        .arg("past")
+        .arg("3days")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("3 DAYS AGO"));
+}
+
