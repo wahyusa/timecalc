@@ -5,6 +5,8 @@ Shit maybe I need to use other name...
 
 BTW all code in here is AI Generated, but I using this tools daily BTW (BTW again)
 
+Also first time using Rust BTW.
+
 ## Features
 
 - **Date Calculations**: Calculate future/past dates
