@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone, Utc};
 use chrono_tz::{Asia::Jakarta, America::Los_Angeles, Tz};
 use std::env;
 use std::str::FromStr;
@@ -88,35 +88,38 @@ fn handle_timezone_convert(args: &[String]) {
     if args.len() < 4 {
         println!("ERROR: Invalid format");
         println!("Example: timecalc convert 4:00 UTC+7 to WIB");
-        println!("         timecalc convert 10:00 PST to WIB");
+        println!("         timecalc tz October 9, 2025 at 04:00AM UTC+8 to WIB");
         return;
     }
 
-    let time_str = &args[0];
-    let from_tz_str = &args[1];
-    let to_tz_str = &args[3];
+    // Find "to" keyword position
+    let to_pos = args.iter().position(|s| s.to_lowercase() == "to");
+    if to_pos.is_none() {
+        println!("ERROR: Missing 'to' keyword");
+        return;
+    }
+    let to_pos = to_pos.unwrap();
 
-    // Parse time
-    let time_parts: Vec<&str> = time_str.split(':').collect();
-    if time_parts.len() < 2 {
-        println!("ERROR: Invalid time format. Use HH:MM");
+    // Extract parts: everything before "to" is source, after is destination
+    let from_parts = &args[..to_pos];
+    let to_tz_str = &args[to_pos + 1];
+
+    // Parse the from_parts to extract date, time, and timezone
+    let (naive_datetime, from_tz_str) = parse_datetime_and_tz(from_parts);
+    if naive_datetime.is_none() {
+        println!("ERROR: Could not parse date/time");
+        println!("Examples:");
+        println!("  timecalc tz 4:00 UTC+7 to WIB");
+        println!("  timecalc tz 04:00AM UTC+8 to WIB");
+        println!("  timecalc tz October 9, 2025 at 04:00AM UTC+8 to WIB");
+        println!("  timecalc tz 2025-10-09 04:00 UTC+8 to WIB");
         return;
     }
 
-    let hour: u32 = time_parts[0].parse().unwrap_or(0);
-    let minute: u32 = time_parts[1].parse().unwrap_or(0);
-
-    if hour > 23 || minute > 59 {
-        println!("ERROR: Invalid time values");
-        return;
-    }
-
-    let naive_time = NaiveTime::from_hms_opt(hour, minute, 0).unwrap();
-    let today = Local::now().date_naive();
-    let naive_datetime = today.and_time(naive_time);
+    let naive_datetime = naive_datetime.unwrap();
 
     // Parse timezones
-    let from_tz = parse_timezone(from_tz_str);
+    let from_tz = parse_timezone(&from_tz_str);
     let to_tz = parse_timezone(to_tz_str);
 
     if from_tz.is_none() || to_tz.is_none() {
@@ -133,9 +136,14 @@ fn handle_timezone_convert(args: &[String]) {
 
     println!("\nTIMEZONE CONVERSION");
     println!("=====================================");
-    println!("FROM: {} {}", from_dt.format("%H:%M"), from_tz_str.to_uppercase());
-    println!("TO:   {} {}", to_dt.format("%H:%M"), to_tz_str.to_uppercase());
-    println!("DATE: {}", to_dt.format("%A, %B %d, %Y"));
+    println!("FROM: {} {} {}", 
+             from_dt.format("%A, %B %d, %Y"),
+             from_dt.format("%H:%M"), 
+             from_tz_str.to_uppercase());
+    println!("TO:   {} {} {}", 
+             to_dt.format("%A, %B %d, %Y"),
+             to_dt.format("%H:%M"), 
+             to_tz_str.to_uppercase());
     println!("=====================================\n");
 }
 
