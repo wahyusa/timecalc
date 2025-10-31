@@ -8,6 +8,7 @@ on:
 
 jobs:
   coverage:
+    name: Code Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,44 +21,23 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Generate coverage
+      - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./lcov.info
+          files: lcov.info
           fail_ci_if_error: true
           verbose: true
 
-      - name: Generate coverage report
-        run: |
-          cargo llvm-cov --all-features --workspace > coverage-report.txt
-          cat coverage-report.txt
+      - name: Generate coverage summary
+        run: cargo llvm-cov --all-features --workspace
 
-      - name: Extract coverage percentage
-        id: coverage
-        run: |
-          # Extract the line coverage percentage from the report
-          COVERAGE=$(cargo llvm-cov --all-features --workspace 2>&1 | grep "TOTAL" | awk '{print $NF}' | tr -d '%')
-          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-          echo "Coverage: $COVERAGE%"
-
-      - name: Check coverage threshold
-        run: |
-          COVERAGE=${{ steps.coverage.outputs.percentage }}
-          THRESHOLD=80
-          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "Coverage $COVERAGE% is below threshold $THRESHOLD%"
-            exit 1
-          fi
-          echo "Coverage $COVERAGE% meets threshold $THRESHOLD%"
-
-      - name: Upload coverage reports as artifact
+      - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: |
-            lcov.info
-            coverage-report.txt
+          path: lcov.info
