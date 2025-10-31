@@ -1,7 +1,7 @@
 # TimeCalc
 
 [![CI](https://github.com/wahyusa/timecalc/actions/workflows/ci.yml/badge.svg)](https://github.com/wahyusa/timecalc/actions/workflows/ci.yml)
-[![Coverage](https://github.com/wahyusa/timecalc/actions/workflows/coverage.yml/badge.svg)](https://github.com/wahyusa/timecalc/actions/workflows/coverage.yml)
+[![codecov](https://codecov.io/gh/wahyusa/timecalc/branch/main/graph/badge.svg)](https://codecov.io/gh/wahyusa/timecalc)
 [![Release](https://github.com/wahyusa/timecalc/actions/workflows/release.yml/badge.svg)](https://github.com/wahyusa/timecalc/actions/workflows/release.yml)
 
 A fast, offline CLI tool for time calculations written in Rust.
