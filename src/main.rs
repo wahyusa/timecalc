@@ -27,7 +27,7 @@ fn main() {
     }
 }
 
-fn handle_future_date(args: &[String]) {
+pub fn handle_future_date(args: &[String]) {
     if args.is_empty() {
         println!("ERROR: Please specify number of days");
         println!("Example: timecalc future 69 days");
@@ -56,7 +56,7 @@ fn handle_future_date(args: &[String]) {
     println!("=====================================\n");
 }
 
-fn handle_past_date(args: &[String]) {
+pub fn handle_past_date(args: &[String]) {
     if args.is_empty() {
         println!("ERROR: Please specify number of days");
         return;
@@ -84,7 +84,7 @@ fn handle_past_date(args: &[String]) {
     println!("=====================================\n");
 }
 
-fn handle_timezone_convert(args: &[String]) {
+pub fn handle_timezone_convert(args: &[String]) {
     if args.len() < 4 {
         println!("ERROR: Invalid format");
         println!("Example: timecalc convert 4:00 UTC+7 to WIB");
@@ -147,7 +147,7 @@ fn handle_timezone_convert(args: &[String]) {
     println!("=====================================\n");
 }
 
-fn handle_remaining(args: &[String]) {
+pub fn handle_remaining(args: &[String]) {
     if args.is_empty() {
         println!("ERROR: Specify 'month' or 'year'");
         return;
@@ -186,7 +186,7 @@ fn handle_remaining(args: &[String]) {
     }
 }
 
-fn handle_day_of_week(args: &[String]) {
+pub fn handle_day_of_week(args: &[String]) {
     if args.is_empty() {
         println!("ERROR: Please provide a date");
         println!("Example: timecalc day 2025-12-25");
@@ -211,7 +211,7 @@ fn handle_day_of_week(args: &[String]) {
     println!("=====================================\n");
 }
 
-fn parse_days(args: &[String]) -> Option<i64> {
+pub fn parse_days(args: &[String]) -> Option<i64> {
     if args.is_empty() {
         return None;
     }
@@ -224,7 +224,7 @@ fn parse_days(args: &[String]) -> Option<i64> {
     num_str.parse::<i64>().ok()
 }
 
-fn parse_timezone(tz_str: &str) -> Option<Tz> {
+pub fn parse_timezone(tz_str: &str) -> Option<Tz> {
     let tz_upper = tz_str.to_uppercase();
 
     match tz_upper.as_str() {
@@ -350,7 +350,7 @@ pub fn extract_date(input: &str) -> NaiveDate {
     Local::now().date_naive()
 }
 
-fn get_last_day_of_month(year: i32, month: u32) -> NaiveDate {
+pub fn get_last_day_of_month(year: i32, month: u32) -> NaiveDate {
     let next_month = if month == 12 { 1 } else { month + 1 };
     let next_year = if month == 12 { year + 1 } else { year };
 
@@ -360,7 +360,7 @@ fn get_last_day_of_month(year: i32, month: u32) -> NaiveDate {
         .unwrap()
 }
 
-fn print_help() {
+pub fn print_help() {
     println!("\nTIME CALCULATOR CLI");
     println!("=========================================================");
     println!("\nFUTURE/PAST DATES:");
@@ -495,7 +495,7 @@ mod tests {
         // Note: This test will default to today's date if parsing fails,
         // which matches the function's logic. We'll test formats it *can* parse.
         let today = Local::now().date_naive();
-        
+
         // YYYY-MM-DD
         assert_eq!(
             extract_date("2025-10-31 04:00pm"),
@@ -516,6 +516,454 @@ mod tests {
 
         // Default to today
         assert_eq!(extract_date("4:00pm"), today);
+    }
+
+    #[test]
+    fn test_parse_timezone_all_supported() {
+        // WIB variants
+        assert!(parse_timezone("WIB").is_some());
+        assert!(parse_timezone("wib").is_some());
+        assert!(parse_timezone("UTC+7").is_some());
+
+        // UTC variants
+        assert!(parse_timezone("UTC").is_some());
+        assert!(parse_timezone("utc").is_some());
+        assert!(parse_timezone("UTC+0").is_some());
+
+        // PST
+        assert!(parse_timezone("PST").is_some());
+        assert!(parse_timezone("pst").is_some());
+        assert!(parse_timezone("UTC-8").is_some());
+
+        // EST
+        assert!(parse_timezone("EST").is_some());
+        assert!(parse_timezone("est").is_some());
+        assert!(parse_timezone("UTC-5").is_some());
+
+        // JST
+        assert!(parse_timezone("JST").is_some());
+        assert!(parse_timezone("jst").is_some());
+        assert!(parse_timezone("UTC+9").is_some());
+
+        // UTC+8
+        assert!(parse_timezone("UTC+8").is_some());
+
+        // UTC-7
+        assert!(parse_timezone("UTC-7").is_some());
+    }
+
+    #[test]
+    fn test_parse_flexible_datetime() {
+        // Simple time today
+        let result = parse_flexible_datetime("4:00");
+        assert!(result.is_some());
+        let dt = result.unwrap();
+        assert_eq!(dt.time(), NaiveTime::from_hms_opt(4, 0, 0).unwrap());
+
+        // With date
+        let result = parse_flexible_datetime("october 9, 2025 04:00am");
+        assert!(result.is_some());
+        let dt = result.unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 10, 9).unwrap());
+        assert_eq!(dt.time(), NaiveTime::from_hms_opt(4, 0, 0).unwrap());
+
+        // With "at" keyword
+        let result = parse_flexible_datetime("october 9, 2025 at 04:00am");
+        assert!(result.is_some());
+        let dt = result.unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 10, 9).unwrap());
+        assert_eq!(dt.time(), NaiveTime::from_hms_opt(4, 0, 0).unwrap());
+
+        // Invalid time returns None
+        assert!(parse_flexible_datetime("invalid").is_none());
+    }
+
+    #[test]
+    fn test_parse_datetime_and_tz() {
+        // Valid input
+        let parts = vec![
+            "04:00AM".to_string(),
+            "UTC+8".to_string(),
+        ];
+        let (dt, tz) = parse_datetime_and_tz(&parts);
+        assert!(dt.is_some());
+        assert_eq!(tz, "UTC+8");
+
+        // With date
+        let parts = vec![
+            "october".to_string(),
+            "9,".to_string(),
+            "2025".to_string(),
+            "at".to_string(),
+            "04:00AM".to_string(),
+            "UTC+8".to_string(),
+        ];
+        let (dt, tz) = parse_datetime_and_tz(&parts);
+        assert!(dt.is_some());
+        assert_eq!(tz, "UTC+8");
+
+        // Empty input
+        let parts: Vec<String> = vec![];
+        let (dt, tz) = parse_datetime_and_tz(&parts);
+        assert!(dt.is_none());
+        assert_eq!(tz, "");
+
+        // Single element
+        let parts = vec!["UTC+8".to_string()];
+        let (dt, tz) = parse_datetime_and_tz(&parts);
+        assert!(dt.is_none());
+        assert_eq!(tz, "UTC+8");
+    }
+
+    #[test]
+    fn test_extract_date_various_months() {
+        // Test all month names
+        assert_eq!(
+            extract_date("january 15, 2025"),
+            NaiveDate::from_ymd_opt(2025, 1, 15).unwrap()
+        );
+        assert_eq!(
+            extract_date("february 20, 2025"),
+            NaiveDate::from_ymd_opt(2025, 2, 20).unwrap()
+        );
+        assert_eq!(
+            extract_date("march 10, 2025"),
+            NaiveDate::from_ymd_opt(2025, 3, 10).unwrap()
+        );
+        assert_eq!(
+            extract_date("april 5, 2025"),
+            NaiveDate::from_ymd_opt(2025, 4, 5).unwrap()
+        );
+        assert_eq!(
+            extract_date("may 1, 2025"),
+            NaiveDate::from_ymd_opt(2025, 5, 1).unwrap()
+        );
+        assert_eq!(
+            extract_date("june 30, 2025"),
+            NaiveDate::from_ymd_opt(2025, 6, 30).unwrap()
+        );
+        assert_eq!(
+            extract_date("july 4, 2025"),
+            NaiveDate::from_ymd_opt(2025, 7, 4).unwrap()
+        );
+        assert_eq!(
+            extract_date("august 15, 2025"),
+            NaiveDate::from_ymd_opt(2025, 8, 15).unwrap()
+        );
+        assert_eq!(
+            extract_date("september 1, 2025"),
+            NaiveDate::from_ymd_opt(2025, 9, 1).unwrap()
+        );
+        assert_eq!(
+            extract_date("november 11, 2025"),
+            NaiveDate::from_ymd_opt(2025, 11, 11).unwrap()
+        );
+        assert_eq!(
+            extract_date("december 25, 2025"),
+            NaiveDate::from_ymd_opt(2025, 12, 25).unwrap()
+        );
+
+        // Test short month names
+        assert_eq!(
+            extract_date("feb 14, 2025"),
+            NaiveDate::from_ymd_opt(2025, 2, 14).unwrap()
+        );
+        assert_eq!(
+            extract_date("mar 17, 2025"),
+            NaiveDate::from_ymd_opt(2025, 3, 17).unwrap()
+        );
+        assert_eq!(
+            extract_date("apr 1, 2025"),
+            NaiveDate::from_ymd_opt(2025, 4, 1).unwrap()
+        );
+        assert_eq!(
+            extract_date("jun 15, 2025"),
+            NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()
+        );
+        assert_eq!(
+            extract_date("jul 20, 2025"),
+            NaiveDate::from_ymd_opt(2025, 7, 20).unwrap()
+        );
+        assert_eq!(
+            extract_date("aug 31, 2025"),
+            NaiveDate::from_ymd_opt(2025, 8, 31).unwrap()
+        );
+        assert_eq!(
+            extract_date("sep 5, 2025"),
+            NaiveDate::from_ymd_opt(2025, 9, 5).unwrap()
+        );
+        assert_eq!(
+            extract_date("sept 10, 2025"),
+            NaiveDate::from_ymd_opt(2025, 9, 10).unwrap()
+        );
+        assert_eq!(
+            extract_date("oct 31, 2025"),
+            NaiveDate::from_ymd_opt(2025, 10, 31).unwrap()
+        );
+        assert_eq!(
+            extract_date("nov 5, 2025"),
+            NaiveDate::from_ymd_opt(2025, 11, 5).unwrap()
+        );
+        assert_eq!(
+            extract_date("dec 31, 2025"),
+            NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_extract_date_iso_format() {
+        // Test YYYY-MM-DD format parsing
+        assert_eq!(
+            extract_date("2025-01-01"),
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap()
+        );
+        assert_eq!(
+            extract_date("2025-12-31"),
+            NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()
+        );
+        assert_eq!(
+            extract_date("2024-02-29"),
+            NaiveDate::from_ymd_opt(2024, 2, 29).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_extract_time_edge_cases() {
+        // Single digit hours
+        assert_eq!(extract_time("1:00"), NaiveTime::from_hms_opt(1, 0, 0));
+        assert_eq!(extract_time("9:59"), NaiveTime::from_hms_opt(9, 59, 0));
+
+        // 11 AM (not 12)
+        assert_eq!(extract_time("11:00am"), NaiveTime::from_hms_opt(11, 0, 0));
+
+        // 11 PM (should become 23:00)
+        assert_eq!(extract_time("11:00pm"), NaiveTime::from_hms_opt(23, 0, 0));
+
+        // Edge of valid times
+        assert_eq!(extract_time("00:00"), NaiveTime::from_hms_opt(0, 0, 0));
+        assert_eq!(extract_time("23:59"), NaiveTime::from_hms_opt(23, 59, 0));
+    }
+
+    #[test]
+    fn test_extract_date_invalid_dates() {
+        // Invalid dates should fall back to today
+        let today = Local::now().date_naive();
+
+        // February 30th doesn't exist - should default to today
+        assert_eq!(extract_date("february 30, 2025"), today);
+
+        // Month 13 doesn't exist
+        assert_eq!(extract_date("month13 15, 2025"), today);
+    }
+
+    #[test]
+    fn test_parse_days_edge_cases() {
+        // Test "day" (singular) suffix
+        let args = vec!["1day".to_string()];
+        assert_eq!(parse_days(&args), Some(1));
+
+        // Test with extra whitespace
+        let args = vec!["  10  ".to_string()];
+        assert_eq!(parse_days(&args), Some(10));
+
+        // Test large numbers
+        let args = vec!["365".to_string()];
+        assert_eq!(parse_days(&args), Some(365));
+
+        let args = vec!["1000days".to_string()];
+        assert_eq!(parse_days(&args), Some(1000));
+    }
+
+    #[test]
+    fn test_get_last_day_various_months() {
+        // Test months with 30 days
+        assert_eq!(get_last_day_of_month(2025, 4).day(), 30); // April
+        assert_eq!(get_last_day_of_month(2025, 6).day(), 30); // June
+        assert_eq!(get_last_day_of_month(2025, 9).day(), 30); // September
+        assert_eq!(get_last_day_of_month(2025, 11).day(), 30); // November
+
+        // Test months with 31 days
+        assert_eq!(get_last_day_of_month(2025, 1).day(), 31); // January
+        assert_eq!(get_last_day_of_month(2025, 3).day(), 31); // March
+        assert_eq!(get_last_day_of_month(2025, 5).day(), 31); // May
+        assert_eq!(get_last_day_of_month(2025, 7).day(), 31); // July
+        assert_eq!(get_last_day_of_month(2025, 8).day(), 31); // August
+        assert_eq!(get_last_day_of_month(2025, 10).day(), 31); // October
+    }
+
+    #[test]
+    fn test_parse_flexible_datetime_edge_cases() {
+        // Test with PM time
+        let result = parse_flexible_datetime("2:30pm");
+        assert!(result.is_some());
+        let dt = result.unwrap();
+        assert_eq!(dt.time(), NaiveTime::from_hms_opt(14, 30, 0).unwrap());
+
+        // Test with ISO date
+        let result = parse_flexible_datetime("2025-12-25 10:00");
+        assert!(result.is_some());
+        let dt = result.unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 12, 25).unwrap());
+        assert_eq!(dt.time(), NaiveTime::from_hms_opt(10, 0, 0).unwrap());
+    }
+
+    #[test]
+    fn test_print_help_executes() {
+        // Just call print_help to increase coverage
+        // This test ensures the function executes without panicking
+        print_help();
+    }
+
+    #[test]
+    fn test_get_last_day_february_non_leap() {
+        // Specifically test February in non-leap year
+        let last_day = get_last_day_of_month(2023, 2);
+        assert_eq!(last_day.day(), 28);
+        assert_eq!(last_day.month(), 2);
+        assert_eq!(last_day.year(), 2023);
+    }
+
+    // Handler function tests to increase coverage
+    #[test]
+    fn test_handle_future_date_valid() {
+        let args = vec!["10".to_string()];
+        handle_future_date(&args);
+    }
+
+    #[test]
+    fn test_handle_future_date_empty() {
+        let args: Vec<String> = vec![];
+        handle_future_date(&args);
+    }
+
+    #[test]
+    fn test_handle_future_date_invalid() {
+        let args = vec!["invalid".to_string()];
+        handle_future_date(&args);
+    }
+
+    #[test]
+    fn test_handle_past_date_valid() {
+        let args = vec!["7".to_string()];
+        handle_past_date(&args);
+    }
+
+    #[test]
+    fn test_handle_past_date_empty() {
+        let args: Vec<String> = vec![];
+        handle_past_date(&args);
+    }
+
+    #[test]
+    fn test_handle_past_date_invalid() {
+        let args = vec!["invalid".to_string()];
+        handle_past_date(&args);
+    }
+
+    #[test]
+    fn test_handle_day_of_week_valid() {
+        let args = vec!["2025-12-25".to_string()];
+        handle_day_of_week(&args);
+    }
+
+    #[test]
+    fn test_handle_day_of_week_empty() {
+        let args: Vec<String> = vec![];
+        handle_day_of_week(&args);
+    }
+
+    #[test]
+    fn test_handle_day_of_week_invalid() {
+        let args = vec!["invalid-date".to_string()];
+        handle_day_of_week(&args);
+    }
+
+    #[test]
+    fn test_handle_remaining_month() {
+        let args = vec!["month".to_string()];
+        handle_remaining(&args);
+    }
+
+    #[test]
+    fn test_handle_remaining_year() {
+        let args = vec!["year".to_string()];
+        handle_remaining(&args);
+    }
+
+    #[test]
+    fn test_handle_remaining_empty() {
+        let args: Vec<String> = vec![];
+        handle_remaining(&args);
+    }
+
+    #[test]
+    fn test_handle_remaining_invalid() {
+        let args = vec!["invalid".to_string()];
+        handle_remaining(&args);
+    }
+
+    #[test]
+    fn test_handle_timezone_convert_valid() {
+        let args = vec![
+            "04:00AM".to_string(),
+            "UTC".to_string(),
+            "to".to_string(),
+            "PST".to_string(),
+        ];
+        handle_timezone_convert(&args);
+    }
+
+    #[test]
+    fn test_handle_timezone_convert_insufficient_args() {
+        let args = vec!["04:00AM".to_string()];
+        handle_timezone_convert(&args);
+    }
+
+    #[test]
+    fn test_handle_timezone_convert_no_to_keyword() {
+        let args = vec![
+            "04:00AM".to_string(),
+            "UTC".to_string(),
+            "from".to_string(),
+            "PST".to_string(),
+        ];
+        handle_timezone_convert(&args);
+    }
+
+    #[test]
+    fn test_handle_timezone_convert_invalid_datetime() {
+        let args = vec![
+            "invalid".to_string(),
+            "UTC".to_string(),
+            "to".to_string(),
+            "PST".to_string(),
+        ];
+        handle_timezone_convert(&args);
+    }
+
+    #[test]
+    fn test_handle_timezone_convert_invalid_timezone() {
+        let args = vec![
+            "04:00AM".to_string(),
+            "INVALID".to_string(),
+            "to".to_string(),
+            "PST".to_string(),
+        ];
+        handle_timezone_convert(&args);
+    }
+
+    #[test]
+    fn test_handle_timezone_convert_with_date() {
+        let args = vec![
+            "October".to_string(),
+            "9,".to_string(),
+            "2025".to_string(),
+            "04:00AM".to_string(),
+            "UTC+8".to_string(),
+            "to".to_string(),
+            "WIB".to_string(),
+        ];
+        handle_timezone_convert(&args);
     }
 }
 
