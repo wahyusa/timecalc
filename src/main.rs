@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone, Utc};
+use chrono::{Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone};
 use chrono_tz::{Asia::Jakarta, America::Los_Angeles, Tz};
 use std::env;
 use std::str::FromStr;
@@ -237,6 +237,118 @@ fn parse_timezone(tz_str: &str) -> Option<Tz> {
         "UTC-7" => Some(Tz::MST7MDT),
         _ => None,
     }
+}
+
+fn parse_datetime_and_tz(parts: &[String]) -> (Option<chrono::NaiveDateTime>, String) {
+    // Try to find timezone at the end (last token before "to")
+    if parts.is_empty() {
+        return (None, String::new());
+    }
+    
+    let tz_str = parts[parts.len() - 1].clone();
+    let datetime_str = parts[..parts.len() - 1].join(" ");
+    
+    // Try various date/time formats
+    let naive_dt = parse_flexible_datetime(&datetime_str);
+    
+    (naive_dt, tz_str)
+}
+
+fn parse_flexible_datetime(input: &str) -> Option<chrono::NaiveDateTime> {
+    let input_lower = input.to_lowercase();
+    
+    // Remove "at" keyword if present
+    let cleaned = input_lower.replace(" at ", " ");
+    
+    // Extract time (with optional AM/PM)
+    let time_opt = extract_time(&cleaned);
+    if time_opt.is_none() {
+        return None;
+    }
+    let time = time_opt.unwrap();
+    
+    // Extract date
+    let date = extract_date(&cleaned);
+    
+    Some(date.and_time(time))
+}
+
+fn extract_time(input: &str) -> Option<NaiveTime> {
+    use regex::Regex;
+    
+    // Look for time patterns: HH:MM, HH:MMAM, HH:MMPM, H:MM, etc.
+    let pattern = r"(\d{1,2}):(\d{2})\s*(am|pm)?";
+    
+    if let Ok(re) = Regex::new(pattern) {
+        if let Some(caps) = re.captures(input) {
+            let mut hour: u32 = caps.get(1)?.as_str().parse().ok()?;
+            let minute: u32 = caps.get(2)?.as_str().parse().ok()?;
+            
+            // Handle AM/PM
+            if let Some(ampm) = caps.get(3) {
+                match ampm.as_str() {
+                    "pm" if hour != 12 => hour += 12,
+                    "am" if hour == 12 => hour = 0,
+                    _ => {}
+                }
+            }
+            
+            return NaiveTime::from_hms_opt(hour, minute, 0);
+        }
+    }
+    
+    None
+}
+
+fn extract_date(input: &str) -> NaiveDate {
+    // Try to parse dates like "October 9, 2025" or "2025-10-09"
+    
+    // Month names mapping
+    let months = [
+        ("january", 1), ("february", 2), ("march", 3), ("april", 4),
+        ("may", 5), ("june", 6), ("july", 7), ("august", 8),
+        ("september", 9), ("october", 10), ("november", 11), ("december", 12),
+        ("jan", 1), ("feb", 2), ("mar", 3), ("apr", 4),
+        ("jun", 6), ("jul", 7), ("aug", 8), ("sep", 9),
+        ("sept", 9), ("oct", 10), ("nov", 11), ("dec", 12),
+    ];
+    
+    // Look for "Month Day, Year" pattern
+    for (month_name, month_num) in &months {
+        if input.contains(month_name) {
+            // Extract numbers after the month name
+            let parts: Vec<&str> = input.split_whitespace().collect();
+            let mut day = None;
+            let mut year = None;
+            
+            for (i, part) in parts.iter().enumerate() {
+                if part.contains(month_name) {
+                    // Next parts should be day and year
+                    if i + 1 < parts.len() {
+                        let day_str = parts[i + 1].trim_end_matches(',');
+                        day = day_str.parse::<u32>().ok();
+                    }
+                    if i + 2 < parts.len() {
+                        year = parts[i + 2].parse::<i32>().ok();
+                    }
+                }
+            }
+            
+            if let (Some(d), Some(y)) = (day, year) {
+                if let Some(date) = NaiveDate::from_ymd_opt(y, *month_num, d) {
+                    return date;
+                }
+            }
+        }
+    }
+    
+    // Try YYYY-MM-DD format
+    if let Ok(date) = NaiveDate::from_str(input.split_whitespace().next().unwrap_or("")) {
+        return date;
+    }
+    
+    // Default to today if no date found
+    Local::now().date_naive()
 }
 
 fn get_last_day_of_month(year: i32, month: u32) -> NaiveDate {
