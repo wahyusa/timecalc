@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone, Utc};
+use chrono::{Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone};
 use chrono_tz::{Asia::Jakarta, America::Los_Angeles, Tz};
 use std::env;
 use std::str::FromStr;
