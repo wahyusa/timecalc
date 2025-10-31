@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone, Utc};
 use chrono_tz::{Asia::Jakarta, America::Los_Angeles, Tz};
 use std::env;
 use std::str::FromStr;
@@ -267,4 +267,65 @@ fn print_help() {
     println!("  UTC+7, UTC+8, UTC-7, etc.");
     
     println!("\n=========================================================\n");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_days_numeric() {
+        let args = vec!["69".to_string()];
+        assert_eq!(parse_days(&args), Some(69));
+    }
+
+    #[test]
+    fn test_parse_days_with_suffix() {
+        let args = vec!["69days".to_string()];
+        assert_eq!(parse_days(&args), Some(69));
+        
+        let args = vec!["30d".to_string()];
+        assert_eq!(parse_days(&args), Some(30));
+    }
+
+    #[test]
+    fn test_parse_timezone_wib() {
+        assert!(parse_timezone("WIB").is_some());
+        assert!(parse_timezone("wib").is_some());
+        assert!(parse_timezone("UTC+7").is_some());
+    }
+
+    #[test]
+    fn test_parse_timezone_utc() {
+        assert!(parse_timezone("UTC").is_some());
+        assert!(parse_timezone("utc").is_some());
+    }
+
+    #[test]
+    fn test_parse_timezone_invalid() {
+        assert!(parse_timezone("INVALID").is_none());
+        assert!(parse_timezone("XYZ").is_none());
+    }
+
+    #[test]
+    fn test_get_last_day_of_month() {
+        // January has 31 days
+        let last_day = get_last_day_of_month(2025, 1);
+        assert_eq!(last_day.day(), 31);
+        
+        // February 2025 has 28 days (not leap year)
+        let last_day = get_last_day_of_month(2025, 2);
+        assert_eq!(last_day.day(), 28);
+        
+        // April has 30 days
+        let last_day = get_last_day_of_month(2025, 4);
+        assert_eq!(last_day.day(), 30);
+    }
+
+    #[test]
+    fn test_get_last_day_of_month_leap_year() {
+        // February 2024 has 29 days (leap year)
+        let last_day = get_last_day_of_month(2024, 2);
+        assert_eq!(last_day.day(), 29);
+    }
 }
