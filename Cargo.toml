@@ -1,7 +1,13 @@
 [package]
 name = "timecalc"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+authors = ["Wahyu SA <ceo@fesnuk.web.id>"]
+description = "Average boring offline CLI tool for time calculations and convertion with human word like 00.00 UTC to WIB"
+repository = "https://github.com/wahyusa/timecalc"
+license = "MIT"
+keywords = ["cli", "time", "date", "timezone", "calculator"]
+categories = ["command-line-utilities", "date-and-time"]
 
 [dependencies]
 chrono = "0.4.42"
