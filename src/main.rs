@@ -261,11 +261,7 @@ fn parse_flexible_datetime(input: &str) -> Option<chrono::NaiveDateTime> {
     let cleaned = input_lower.replace(" at ", " ");
     
     // Extract time (with optional AM/PM)
-    let time_opt = extract_time(&cleaned);
-    if time_opt.is_none() {
-        return None;
-    }
-    let time = time_opt.unwrap();
+    let time = extract_time(&cleaned)?;
     
     // Extract date
     let date = extract_date(&cleaned);
