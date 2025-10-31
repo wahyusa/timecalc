@@ -34,11 +34,25 @@ Download the binary for your platform from [Releases](https://github.com/wahyusa
 ## Usage
 
 ```bash
+# Time convertion is my main feature focus here
+
+# Simple time conversion (uses today's date)
+timecalc tz 4:00 UTC+7 to WIB
+
+# With AM/PM
+timecalc tz 04:00AM UTC+8 to WIB
+
+# Full date with natural language
+timecalc tz October 9, 2025 at 04:00AM UTC+8 to WIB
+
+# ISO date format
+timecalc tz 2025-10-09 04:00 UTC+8 to WIB
+
+# Short month names
+timecalc tz Oct 9, 2025 at 4:00PM PST to WIB
+
 # Calculate future dates
 timecalc future 69 days
-
-# Convert timezones
-timecalc convert 4:00 UTC+7 to WIB
 
 # Days remaining in month
 timecalc remaining month
