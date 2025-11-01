@@ -98,7 +98,8 @@ pub fn handle_timezone_convert(args: &[String]) {
 
     if from_tz.is_none() || to_tz.is_none() {
         println!("ERROR: Unsupported timezone");
-        println!("Supported: WIB, UTC, UTC+7, UTC-7, PST, EST, JST");
+        println!("Supported: WIB, WITA, WIT, SGT, MYT, UTC, PST, EST, JST");
+        println!("Or use: UTC+7, UTC+8, UTC+9, UTC-7, UTC-8, etc.");
         return;
     }
 
@@ -202,13 +203,22 @@ pub fn parse_timezone(tz_str: &str) -> Option<Tz> {
     let tz_upper = tz_str.to_uppercase();
 
     match tz_upper.as_str() {
-        "WIB" | "UTC+7" => Some(Jakarta),
+        // Indonesia
+        "WIB" | "UTC+7" => Some(Jakarta),                    // Western Indonesia (Jakarta, Sumatra)
+        "WITA" | "UTC+8" => Some(Tz::Asia__Makassar),       // Central Indonesia (Bali, Sulawesi)
+        "WIT" | "UTC+9" => Some(Tz::Asia__Jayapura),        // Eastern Indonesia (Papua, Maluku)
+        
+        // Southeast Asia
+        "SGT" => Some(Tz::Asia__Singapore),                  // Singapore
+        "MYT" => Some(Tz::Asia__Kuala_Lumpur),              // Malaysia
+        
+        // Common timezones
         "UTC" | "UTC+0" => Some(Tz::UTC),
         "PST" | "UTC-8" => Some(Los_Angeles),
         "EST" | "UTC-5" => Some(Tz::EST5EDT),
-        "JST" | "UTC+9" => Some(Tz::Japan),
-        "UTC+8" => Some(Tz::Hongkong),
+        "JST" => Some(Tz::Japan),                            // Japan
         "UTC-7" => Some(Tz::MST7MDT),
+        
         _ => None,
     }
 }
@@ -353,8 +363,10 @@ pub fn print_help() {
     println!("  timecalc day 2025-12-25    - What day is this date?");
 
     println!("\nSUPPORTED TIMEZONES:");
-    println!("  WIB (UTC+7), UTC, PST (UTC-8), EST (UTC-5), JST (UTC+9)");
-    println!("  UTC+7, UTC+8, UTC-7, etc.");
+    println!("  Indonesia: WIB (UTC+7), WITA (UTC+8), WIT (UTC+9)");
+    println!("  Southeast Asia: SGT (Singapore), MYT (Malaysia)");
+    println!("  Common: UTC, PST (UTC-8), EST (UTC-5), JST (Japan)");
+    println!("  Or use: UTC+7, UTC+8, UTC+9, UTC-7, UTC-8, etc.");
 
     println!("\n=========================================================\n");
 }

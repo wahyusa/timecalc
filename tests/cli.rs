@@ -1,18 +1,10 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
-use escargot::CargoBuild;
 use std::process::Command;
 
 // Helper function to create a command for the binary
 fn cmd() -> Command {
-        let bin_path = CargoBuild::new()
-        .bin("timecalc") // The name of your binary
-        .run()
-        .unwrap()
-        .path()
-        .to_path_buf();
-
-    Command::new(bin_path)
+    Command::cargo_bin("timecalc").unwrap()
 }
 
 // ===================================
@@ -359,4 +351,78 @@ fn test_past_with_days_suffix() {
         .assert()
         .success()
         .stdout(predicate::str::contains("3 DAYS AGO"));
+}
+
+// ===================================
+// Tests for new regional timezones
+// ===================================
+
+#[test]
+fn test_tz_wib_to_wita() {
+    // WIB (UTC+7) to WITA (UTC+8)
+    cmd()
+        .arg("tz")
+        .arg("10:00")
+        .arg("WIB")
+        .arg("to")
+        .arg("WITA")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
+}
+
+#[test]
+fn test_tz_wita_to_wit() {
+    // WITA (UTC+8) to WIT (UTC+9)
+    cmd()
+        .arg("tz")
+        .arg("14:00")
+        .arg("WITA")
+        .arg("to")
+        .arg("WIT")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
+}
+
+#[test]
+fn test_tz_sgt_to_wib() {
+    // Singapore Time to WIB
+    cmd()
+        .arg("tz")
+        .arg("09:00")
+        .arg("SGT")
+        .arg("to")
+        .arg("WIB")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
+}
+
+#[test]
+fn test_tz_myt_to_wib() {
+    // Malaysia Time to WIB
+    cmd()
+        .arg("tz")
+        .arg("15:00")
+        .arg("MYT")
+        .arg("to")
+        .arg("WIB")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
+}
+
+#[test]
+fn test_tz_jst_to_wib() {
+    // Japan Time to WIB (useful for Japanese games!)
+    cmd()
+        .arg("tz")
+        .arg("20:00")
+        .arg("JST")
+        .arg("to")
+        .arg("WIB")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("TIMEZONE CONVERSION"));
 }
