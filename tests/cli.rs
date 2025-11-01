@@ -1,10 +1,18 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
+use escargot::CargoBuild;
 use std::process::Command;
 
 // Helper function to create a command for the binary
 fn cmd() -> Command {
-    Command::cargo_bin("timecalc").unwrap()
+        let bin_path = CargoBuild::new()
+        .bin("timecalc") // The name of your binary
+        .run()
+        .unwrap()
+        .path()
+        .to_path_buf();
+
+    Command::new(bin_path)
 }
 
 // ===================================
