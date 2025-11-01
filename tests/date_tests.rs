@@ -1,5 +1,5 @@
 use timecalc::*;
-use chrono::NaiveDate;
+use chrono::{Datelike};
 
 #[test]
 fn test_get_last_day_of_month() {
