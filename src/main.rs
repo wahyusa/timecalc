@@ -965,5 +965,13 @@ mod tests {
         ];
         handle_timezone_convert(&args);
     }
+
+    // lol idk what I am doing nikka
+    // public static void int args strings args [] {
+    //     ()=> nikka;
+    // }
+
+    // fuck
+    {{FUCK}::nikka!::putin()}::!()
 }
 
