@@ -38,7 +38,7 @@ Download the binary for your platform from [Releases](https://github.com/wahyusa
 ## Usage
 
 ```bash
-# Time convertion is my main feature focus here
+# Time convert is my main feature focus here
 
 # Simple time conversion (uses today's date)
 timecalc tz 4:00 UTC+7 to WIB
@@ -69,6 +69,21 @@ For full help:
 ```bash
 timecalc help
 ```
+
+## Supported Timezones
+
+**Indonesia** (All 3 regions):
+- WIB (UTC+7) - Western Indonesia (Jakarta, Sumatra)
+- WITA (UTC+8) - Central Indonesia (Bali, Sulawesi) 🆕
+- WIT (UTC+9) - Eastern Indonesia (Papua, Maluku) 🆕
+
+**Southeast Asia**:
+- SGT (UTC+8) - Singapore 🆕
+- MYT (UTC+8) - Malaysia 🆕
+
+**International**:
+- UTC, PST (UTC-8), EST (UTC-5), JST (UTC+9)
+- Or use: UTC+7, UTC+8, UTC+9, UTC-7, UTC-8, etc.
 
 ## Development
 
